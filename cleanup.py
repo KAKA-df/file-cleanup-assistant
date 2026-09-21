@@ -1,7 +1,14 @@
 from pathlib import Path
 import time
 
-a_copy = Path("D:/") / "Acopy"
+folder_path = Path(input("Folder to scan: "))
+if not folder_path.exists():
+    print("This Path doesn't exist")
+    raise SystemExit
+elif not folder_path.is_dir():
+    print("This Path is not a directory")
+    raise SystemExit
+
 limit_bytes = 100 * 1024
 limit_days = 90
 
@@ -23,11 +30,12 @@ def flag_test(byte_count, days):
     elif days > limit_days:
         return "OLD"
 
+flagged_files = []
 scanned_count = 0
 flagged_count = 0
 flagged_bytes = 0
 
-for item in a_copy.rglob("*"):
+for item in folder_path.rglob("*"):
     if item.is_file():
         byte_count = item.stat().st_size
         size, unit = file_size(byte_count)
@@ -41,10 +49,15 @@ for item in a_copy.rglob("*"):
         scanned_count += 1
 
         if flag:
-            print(item, round(size, 2), unit, round(age_days), "days old", "\nFlag:", flag)
+            file_info = (item, byte_count, size, unit, age_days, flag)
+            flagged_files.append(file_info)
             flagged_count += 1
             flagged_bytes += byte_count
 
+flagged_files.sort(key=lambda x: x[1], reverse=True)
+for item, byte_count, size, unit, age_days, flag in flagged_files:
+    print(item, "\nSize: ", round(size, 2), "\nAge: ", round(age_days), "\nFlag: ", flag, "\n")
+
 flagged_size, flagged_unit = file_size(flagged_bytes)
-print("\n ----------------------------")
+print("----------------------------")
 print("Files scanned: ", scanned_count, "\nFiles flagged: ", flagged_count, "\nTotal flagged size: ", round(flagged_size, 2), flagged_unit)
