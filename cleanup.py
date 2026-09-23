@@ -8,9 +8,26 @@ if not folder_path.exists():
 elif not folder_path.is_dir():
     print("This Path is not a directory")
     raise SystemExit
+while True:
+    try:
+        large_file_threshold = float(input("Large file threshold (MiB): "))
+        if large_file_threshold <= 0:
+            print("Enter a valid number")
+            continue
+        break
+    except ValueError:
+        print("Enter a valid number")
+limit_bytes = large_file_threshold * 1024 ** 2
 
-limit_bytes = 100 * 1024
-limit_days = 90
+while True:
+    try:
+        limit_days = int(input("Old file threshold (days): "))      
+        if limit_days <= 0:
+            print("Enter a valid number")
+            continue
+        break
+    except ValueError:
+        print("Enter a valid number")
 
 def file_size(byte_count):
     if byte_count < 1024:
@@ -37,15 +54,21 @@ flagged_bytes = 0
 
 for item in folder_path.rglob("*"):
     if item.is_file():
-        byte_count = item.stat().st_size
+        try:
+            stat_info = item.stat()
+        except PermissionError:
+            print("Skipped: ", item)
+            continue
+
+        byte_count = stat_info.st_size
         size, unit = file_size(byte_count)
 
-        modified_time = item.stat().st_mtime
+        modified_time = stat_info.st_mtime
         age_seconds = time.time() - modified_time
         age_days = age_seconds / (60 * 60 * 24)
 
         flag = flag_test(byte_count, age_days)
-
+    
         scanned_count += 1
 
         if flag:
@@ -56,7 +79,7 @@ for item in folder_path.rglob("*"):
 
 flagged_files.sort(key=lambda x: x[1], reverse=True)
 for item, byte_count, size, unit, age_days, flag in flagged_files:
-    print(item, "\nSize: ", round(size, 2), "\nAge: ", round(age_days), "\nFlag: ", flag, "\n")
+    print(item, "\nSize: ", round(size, 2), unit, "\nAge: ", round(age_days), "days", "\nFlag: ", flag, "\n")
 
 flagged_size, flagged_unit = file_size(flagged_bytes)
 print("----------------------------")
