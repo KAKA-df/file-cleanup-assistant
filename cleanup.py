@@ -1,5 +1,6 @@
 from pathlib import Path
 import time
+import hashlib
 
 folder_path = Path(input("Folder to scan: "))
 if not folder_path.exists():
@@ -29,6 +30,17 @@ while True:
     except ValueError:
         print("Enter a valid number")
 
+def file_hash(path):
+    hasher = hashlib.sha256()
+    with open(path, "rb") as file:
+        while True:
+            data = file.read(1024 * 1024)
+            if not data:
+                break
+
+            hasher.update(data)
+    return hasher.hexdigest()
+
 def file_size(byte_count):
     if byte_count < 1024:
         return byte_count, "bytes"
@@ -48,6 +60,7 @@ def flag_test(byte_count, days):
         return "OLD"
 
 flagged_files = []
+size_groups = {}
 scanned_count = 0
 flagged_count = 0
 flagged_bytes = 0
@@ -61,6 +74,11 @@ for item in folder_path.rglob("*"):
             continue
 
         byte_count = stat_info.st_size
+
+        if byte_count in size_groups:
+            size_groups[byte_count].append(item)
+        else:
+            size_groups[byte_count] = [item]            
         size, unit = file_size(byte_count)
 
         modified_time = stat_info.st_mtime
@@ -76,6 +94,24 @@ for item in folder_path.rglob("*"):
             flagged_files.append(file_info)
             flagged_count += 1
             flagged_bytes += byte_count
+
+for byte_count, files in size_groups.items():
+    if len(files) >= 2:
+        hash_groups = {}
+        for each_file in files:
+            hash_code = file_hash(each_file)
+
+            if hash_code in hash_groups:
+                hash_groups[hash_code].append(each_file)
+            else:
+                hash_groups[hash_code] = [each_file]
+        for hash_code, duplicate_files in hash_groups.items():
+            if len(duplicate_files) >= 2:
+                print("\nThese a duplicate files: ")
+                for duplicate_file in duplicate_files:
+                    print(duplicate_file)
+                size, unit = file_size(byte_count)
+                print("Size: ", size, unit, "\n")
 
 flagged_files.sort(key=lambda x: x[1], reverse=True)
 for item, byte_count, size, unit, age_days, flag in flagged_files:
