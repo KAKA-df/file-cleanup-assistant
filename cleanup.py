@@ -99,7 +99,11 @@ for byte_count, files in size_groups.items():
     if len(files) >= 2:
         hash_groups = {}
         for each_file in files:
-            hash_code = file_hash(each_file)
+            try:
+                hash_code = file_hash(each_file)
+            except (PermissionError, FileNotFoundError):
+                print("Skipped hashing: ", each_file)
+                continue
 
             if hash_code in hash_groups:
                 hash_groups[hash_code].append(each_file)
@@ -107,7 +111,7 @@ for byte_count, files in size_groups.items():
                 hash_groups[hash_code] = [each_file]
         for hash_code, duplicate_files in hash_groups.items():
             if len(duplicate_files) >= 2:
-                print("\nThese a duplicate files: ")
+                print("\nThese are duplicate files: ")
                 for duplicate_file in duplicate_files:
                     print(duplicate_file)
                 size, unit = file_size(byte_count)
