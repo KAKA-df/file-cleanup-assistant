@@ -1,4 +1,5 @@
 from pathlib import Path
+from send2trash import send2trash
 import time
 import hashlib
 
@@ -118,9 +119,41 @@ for byte_count, files in size_groups.items():
                 print("Size: ", size, unit, "\n")
 
 flagged_files.sort(key=lambda x: x[1], reverse=True)
-for item, byte_count, size, unit, age_days, flag in flagged_files:
-    print(item, "\nSize: ", round(size, 2), unit, "\nAge: ", round(age_days), "days", "\nFlag: ", flag, "\n")
+for number, (item, byte_count, size, unit, age_days, flag) in enumerate(flagged_files, start=1):
+    print(f"[{number}]", 
+          item, 
+          "\nSize: ", round(size, 2), unit, 
+          "\nAge: ", round(age_days), "days", 
+          "\nFlag: ", flag,
+          "\n")
 
 flagged_size, flagged_unit = file_size(flagged_bytes)
 print("----------------------------")
 print("Files scanned: ", scanned_count, "\nFiles flagged: ", flagged_count, "\nTotal flagged size: ", round(flagged_size, 2), flagged_unit)
+
+if not flagged_files:
+    print("No files need cleanup")
+    raise SystemExit  
+
+while True:
+    try:
+        selection = int(input("Choose a file number: "))
+        if selection < 1 or selection > len(flagged_files):
+            print("Enter a valid file number")
+            continue
+        break
+    except ValueError:
+        print("Enter a valid file number") 
+selected_file = flagged_files[selection - 1]
+print("Selected file: ", selected_file[0])
+while True:
+    confirm = input("Are you sure? (y/n): ").strip().lower()
+    if confirm == 'y':
+        print("Confirmed: ", selected_file[0])
+        send2trash(selected_file[0])
+        break
+    elif confirm == 'n':
+        print("Cancelled")
+        break
+    else:
+        print("Enter y or n: ")
