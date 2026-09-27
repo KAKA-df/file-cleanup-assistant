@@ -137,20 +137,36 @@ if not flagged_files:
 
 while True:
     try:
-        selection = int(input("Choose a file number: "))
-        if selection < 1 or selection > len(flagged_files):
+        selection = input("Choose file number(s): ").split()
+        selection = [int(number) for number in selection]
+
+        if not selection:
+            print("Enter at least one file number: ")
+            continue
+
+        if any(
+                number < 1 or number > len(flagged_files)
+                for number in selection):
             print("Enter a valid file number")
             continue
         break
+
     except ValueError:
-        print("Enter a valid file number") 
-selected_file = flagged_files[selection - 1]
-print("Selected file: ", selected_file[0])
+        print("Enter a valid file number")
+
+selected_files = []     
+for number in selection:
+    selected_files.append(flagged_files[number - 1])  
+
+for selected_file in selected_files:
+    print("Selected files: ", selected_file[0])
+
 while True:
     confirm = input("Are you sure? (y/n): ").strip().lower()
     if confirm == 'y':
-        print("Confirmed: ", selected_file[0])
-        send2trash(selected_file[0])
+        for selected_file in selected_files:
+            print("Confirmed: ", selected_file[0])
+            send2trash(selected_file[0])
         break
     elif confirm == 'n':
         print("Cancelled")
